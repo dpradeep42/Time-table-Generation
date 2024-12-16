@@ -1,44 +1,84 @@
-import streamlit as st
+import csv
 import pandas as pd
-from timetable_generator import generate_timetable
+import random
+import copy
 
-# Streamlit App Layout
-def main():
-    st.title("Exam Timetable Generator")
+# Define classes for entities
+class Course:
+    def __init__(self, courseCode, courseName, number):
+        self.courseCode = courseCode
+        self.courseName = courseName
+        self.number = number
 
-    # Upload CSV Files
-    st.sidebar.header("Upload Data")
-    courses_file = st.sidebar.file_uploader("Upload Courses CSV", type="csv")
-    students_file = st.sidebar.file_uploader("Upload Students CSV", type="csv")
-    teachers_file = st.sidebar.file_uploader("Upload Teachers CSV", type="csv")
+class Registration:
+    def __init__(self, studentName, registeredCourses):
+        self.studentName = studentName
+        self.registeredCourses = registeredCourses
 
-    if courses_file and students_file and teachers_file:
-        # Load data
-        courses = pd.read_csv(courses_file)
-        students = pd.read_csv(students_file)
-        teachers = pd.read_csv(teachers_file)
+class Exam:
+    def __init__(self, startTime, roomNo, day, invigilator):
+        self.startTime = startTime
+        self.roomNo = roomNo
+        self.day = day
+        self.invigilator = invigilator
 
-        st.write("### Uploaded Data")
-        st.write("**Courses**")
-        st.dataframe(courses)
-        st.write("**Students**")
-        st.dataframe(students)
-        st.write("**Teachers**")
-        st.dataframe(teachers)
+class Individual:
+    def __init__(self, chromosome, value):
+        self.chromosome = chromosome
+        self.value = value
 
-        # Generate Timetable Button
-        if st.button("Generate Timetable"):
-            timetable = generate_timetable()
+# Helper functions for loading data
+def load_data(courses_file, students_file, teachers_file, registrations_file):
+    courses, registrations, instructors = [], [], []
 
-            # Display timetable in a formatted way
-            st.write("### Generated Timetable")
-            # Assuming timetable is returned as a DataFrame
-            if isinstance(timetable, pd.DataFrame):
-                st.dataframe(timetable)
-            else:
-                st.write(timetable)
-    else:
-        st.warning("Please upload all required files.")
+    # Load courses
+    courses_data = pd.read_csv(courses_file)
+    for count, row in courses_data.iterrows():
+        courses.append(Course(row['courseCode'], row['courseName'], count))
+
+    # Load instructors
+    instructors_data = pd.read_csv(teachers_file)
+    for count, row in instructors_data.iterrows():
+        instructors.append((row['name'], count))
+
+    # Load student registrations
+    students_data = pd.read_csv(students_file)
+    for _, row in students_data.iterrows():
+        registrations.append(Registration(row['studentName'], []))
+
+    registrations_data = pd.read_csv(registrations_file)
+    for _, row in registrations_data.iterrows():
+        for reg in registrations:
+            if reg.studentName == row['studentName']:
+                reg.registeredCourses.append(row['courseCode'])
+
+    return courses, registrations, instructors
+
+# Fitness and Genetic Algorithm methods
+def calculate_fitness(population):
+    for individual in population:
+        individual.value = random.randint(0, 400)  # Simplified fitness calculation
+    return population
+
+def generate_population(size, courses):
+    population = []
+    for _ in range(size):
+        chromosome = [random.choice(courses) for _ in range(len(courses))]
+        population.append(Individual(chromosome, value=-1))
+    return calculate_fitness(population)
+
+# Main algorithm
+def run_algorithm(courses, registrations, instructors):
+    population_size = 100
+    population = generate_population(population_size, courses)
+    best_solution = max(population, key=lambda ind: ind.value)
+
+    return best_solution
+
+# Generate a timetable
+def generate_timetable(courses, registrations, instructors):
+    best_solution = run_algorithm(courses, registrations, instructors)
+    return best_solution
 
 if __name__ == "__main__":
-    main()
+    print("This script is intended to be imported and used by the Streamlit app.")

@@ -1,4 +1,5 @@
 import csv
+import pandas as pd
 import random
 import copy
 
@@ -27,37 +28,29 @@ class Individual:
         self.value = value
 
 # Helper functions for loading data
-def load_data():
+def load_data(courses_file, students_file, teachers_file, registrations_file):
     courses, registrations, instructors = [], [], []
-    
+
     # Load courses
-    with open('courses.csv') as file:
-        reader = csv.reader(file)
-        for count, row in enumerate(reader):
-            if row:
-                courses.append(Course(row[0], row[1], count))
+    courses_data = pd.read_csv(courses_file)
+    for count, row in courses_data.iterrows():
+        courses.append(Course(row['courseCode'], row['courseName'], count))
 
     # Load instructors
-    with open('teachers.csv') as file:
-        reader = csv.reader(file)
-        for count, row in enumerate(reader):
-            if row:
-                instructors.append((row[0], count))
+    instructors_data = pd.read_csv(teachers_file)
+    for count, row in instructors_data.iterrows():
+        instructors.append((row['name'], count))
 
     # Load student registrations
-    with open('studentNames.csv') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            if row:
-                registrations.append(Registration(row[0], []))
+    students_data = pd.read_csv(students_file)
+    for _, row in students_data.iterrows():
+        registrations.append(Registration(row['studentName'], []))
 
-    with open('studentCourse.csv') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            if row and row[0]:
-                for reg in registrations:
-                    if reg.studentName == row[1]:
-                        reg.registeredCourses.append(row[2])
+    registrations_data = pd.read_csv(registrations_file)
+    for _, row in registrations_data.iterrows():
+        for reg in registrations:
+            if reg.studentName == row['studentName']:
+                reg.registeredCourses.append(row['courseCode'])
 
     return courses, registrations, instructors
 
@@ -75,7 +68,6 @@ def generate_population(size, courses):
     return calculate_fitness(population)
 
 # Main algorithm
-
 def run_algorithm(courses, registrations, instructors):
     population_size = 100
     population = generate_population(population_size, courses)
@@ -84,11 +76,9 @@ def run_algorithm(courses, registrations, instructors):
     return best_solution
 
 # Generate a timetable
-def generate_timetable():
-    courses, registrations, instructors = load_data()
+def generate_timetable(courses, registrations, instructors):
     best_solution = run_algorithm(courses, registrations, instructors)
     return best_solution
 
 if __name__ == "__main__":
-    best_timetable = generate_timetable()
-    print("Best Timetable:", best_timetable)
+    print("This script is intended to be imported and used by the Streamlit app.")
